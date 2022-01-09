@@ -1,63 +1,82 @@
 from PyPDF2 import PdfFileWriter, PdfFileReader
 
-# Read the invoice file
-inputpdf = PdfFileReader(open("invoice.pdf", "rb"))
 
-"""
-Itration to split the pdf files and name them
-"""
-for num in range(inputpdf.numPages):
-    # get the current page
-    pageObj = inputpdf.getPage(num)
-
-    # Extract the page content
-    text = pageObj.extractText()
-    # Split the content
-    text2 = text.split()
+def extractor():
+    # Read the invoice file
+    pdfObj = open("invoice.pdf", "rb")
+    inputpdf = PdfFileReader(pdfObj)
 
     """
-    Making the name for the file using the bill to name
+    Itration to split the pdf files and name them
     """
+    for num in range(inputpdf.numPages):
+        # get the current page
+        pageObj = inputpdf.getPage(num)
 
-    # initalize the start and end list for holding the mark used in finding the name
-    start = []
-    end = []
-    try:
-        # loop through the list and get the name
-        for i in text2:
-            if text2[text2.index(i)][:5] == "PRICE" and len(i) > 5:
-                start.append(text2.index(i))
-            if text2[text2.index(i)][:3] == "TO:" and text2[text2.index(i)][:10] != "TO:INVOICE":
-                end.append(text2.index(i))
+        # Extract the page content
+        text = pageObj.extractText()
+        # Split the content
+        text2 = text.split()
 
-        fname = text2[start[0]: start[0] + 2]
-        fname[0] = fname[0][5:]
-    except:
-        # get the page content and name it with the page number
+        """
+        Making the name for the file using the bill to name
+        """
+
+        # initalize the start and end list for holding the mark used in finding the name
+        start = []
+        end = []
+        try:
+            # loop through the list and get the name
+            for i in text2:
+                if text2[text2.index(i)][:5] == "PRICE" and len(i) > 5:
+                    start.append(text2.index(i))
+                if text2[text2.index(i)][:3] == "TO:" and text2[text2.index(i)][:10] != "TO:INVOICE":
+                    end.append(text2.index(i))
+
+            fname = text2[start[0]: start[0] + 2]
+            fname[0] = fname[0][5:]
+        except:
+            # get the page content and name it with the page number
+            output = PdfFileWriter()
+            output.addPage(inputpdf.getPage(num))
+
+            with open("%s.pdf" % num, "wb") as outputStream:
+                output.write(outputStream)
+
+        name = ""
+        for i in fname:
+            name += i
+            name += " "
+
+        # get the page content
         output = PdfFileWriter()
         output.addPage(inputpdf.getPage(num))
 
-        with open("%s.pdf" % num, "wb") as outputStream:
-            output.write(outputStream)
+        # name construction
+        filename = str(num)
+        filename += " "
+        filename += name
 
-    name = ""
-    for i in fname:
-        name += i
-        name += " "
+        # file write operation
+        try:
+            with open("%s.pdf" % filename, "wb") as outputStream:
+                output.write(outputStream)
+        except:
+            with open("%s.pdf" % num, "wb") as outputStream:
+                output.write(outputStream)
 
-    # get the page content
-    output = PdfFileWriter()
-    output.addPage(inputpdf.getPage(num))
+    # Close the pdf file which was splited
+    pdfObj.close()
 
-    # name construction
-    filename = str(num)
-    filename += " "
-    filename += name
+    # Success message
+    print("Split Completed")
 
-    # file write operation
-    try:
-        with open("%s.pdf" % filename, "wb") as outputStream:
-            output.write(outputStream)
-    except:
-        with open("%s.pdf" % num, "wb") as outputStream:
-            output.write(outputStream)
+
+"""
+Error handler for file not named correctly
+"""
+
+try:
+    extractor()
+except:
+    print("Error: wrong file name. Rename file to \'invoice\' ")
